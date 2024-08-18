@@ -1,0 +1,40 @@
+services:
+
+  dockge:
+    image: louislam/dockge:1
+    container_name: ${SERVICE_NAME}
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - proxy
+      - external
+    environment: []
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./data:/app/data
+      - /opt/stacks:/opt/stacks
+    labels:
+      - homepage.name=Dockge
+      - homepage.description=Container management
+      - homepage.icon=dockge-light
+      - homepage.href=https://${SERVICE_NAME}.${MY_DOMAIN}
+      - homepage.group=Hosting
+      - traefik.enable=true
+      - traefik.http.routers.${SERVICE_NAME}.entrypoints=http
+      - traefik.http.routers.${SERVICE_NAME}.rule=Host(`${SERVICE_NAME}.${MY_DOMAIN}`)
+      - traefik.http.routers.${SERVICE_NAME}.middlewares=default-whitelist@file
+      - traefik.http.routers.${SERVICE_NAME}.middlewares=${SERVICE_NAME}-https-redirect
+      - traefik.http.routers.${SERVICE_NAME}-secure.entrypoints=https
+      - traefik.http.routers.${SERVICE_NAME}-secure.rule=Host(`${SERVICE_NAME}.${MY_DOMAIN}`)
+      - traefik.http.routers.${SERVICE_NAME}-secure.tls=true
+      - traefik.http.routers.${SERVICE_NAME}-secure.service=${SERVICE_NAME}
+      - traefik.http.middlewares.${SERVICE_NAME}-https-redirect.redirectscheme.scheme=https
+      - traefik.http.services.${SERVICE_NAME}.loadbalancer.server.port=${SERVICE_INTERNAL_PORT}
+      - traefik.docker.network=proxy
+
+networks:
+  proxy:
+    external: true
+  external:
+    external: true
